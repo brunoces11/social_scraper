@@ -75,7 +75,14 @@ export async function POST(request: NextRequest) {
 
       try {
         const txtStat = fs.statSync(txtPath);
-        hasTxt = txtStat.size > 0;
+        if (txtStat.size > 0) {
+          // Only mark as "has txt" if the file contains LLM-enriched data
+          const head = Buffer.alloc(Math.min(200, txtStat.size));
+          const fd = fs.openSync(txtPath, "r");
+          fs.readSync(fd, head, 0, head.length, 0);
+          fs.closeSync(fd);
+          hasTxt = head.toString("utf-8").includes("LLM_Title:");
+        }
       } catch { /* not found */ }
 
       try {
