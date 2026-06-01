@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TikTok & Instagram Scraper & Transcript Tool",
-  description: "Ferramenta local de pesquisa — extraia dados e transcrições de canais do TikTok e Instagram Reels",
+  title: "TikTok Scraper & Transcript Tool",
+  description: "Ferramenta local de pesquisa — extraia dados e transcrições de canais do TikTok",
 };
 
 export default function RootLayout({

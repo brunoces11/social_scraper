@@ -20,23 +20,5 @@
       "outputUrlField": "videoUrl",
       "isWebVtt": true
     }
-  ],
-  "instaActors": [
-    {
-      "id": "scrapium/instagram-reels-scraper",
-      "name": "Profile_Actor",
-      "default": true,
-      "inputUrlField": "profileUrl",
-      "inputUrlMode": "single",
-      "outputField": "reels"
-    },
-    {
-      "id": "apify/instagram-hashtag-scraper",
-      "name": "Hashtag_Actor",
-      "default": false,
-      "inputUrlField": "hashtags",
-      "inputUrlMode": "array",
-      "outputField": "posts"
-    }
   ]
 }

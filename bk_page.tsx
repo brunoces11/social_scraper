@@ -6,7 +6,6 @@ import type { SearchParams } from "@/components/ChannelForm";
 import VideoResultsTable from "@/components/VideoResultsTable";
 import TranscriptResultsTable from "@/components/TranscriptResultsTable";
 import SavedSearches from "@/components/SavedSearches";
-import InstaPanel from "@/components/insta_Panel";
 import { ChannelVideoRow, TranscriptRow } from "@/types";
 import { normalizeTranscripts } from "@/lib/normalize";
 
@@ -45,7 +44,6 @@ export default function Home() {
   const [elevenlabsVoices, setElevenlabsVoices] = useState<{ id: string; name: string; default: boolean }[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
   const [elevenlabsCredits, setElevenlabsCredits] = useState<{ characterCount: number; characterLimit: number; characterRemaining: number } | null>(null);
-  const [platform, setPlatform] = useState<"TikTok" | "Instagram">("TikTok");
 
   const fetchCredits = useCallback(async (accountId?: string) => {
     try {
@@ -1129,27 +1127,6 @@ export default function Home() {
 
   return (
     <main className="container">
-      {/* ─── Platform Switch ─── */}
-      <div className="platform-switch-container">
-        <div className="platform-switch">
-          <button
-            className={`platform-btn ${platform === "TikTok" ? "active" : ""}`}
-            onClick={() => setPlatform("TikTok")}
-          >
-            🎵 TikTok
-          </button>
-          <button
-            className={`platform-btn ${platform === "Instagram" ? "active" : ""}`}
-            onClick={() => setPlatform("Instagram")}
-          >
-            📸 Instagram
-          </button>
-        </div>
-      </div>
-
-      {/* ─── TikTok Panel ─── */}
-      {platform === "TikTok" && (
-        <>
       <div className="header-row">
         <div>
           <h1>🎵 TikTok Scraper & Transcript Tool</h1>
@@ -1487,13 +1464,6 @@ export default function Home() {
         if (filename) setCurrentXlsFile(filename);
         setResultLabel(filename ? filename.replace(/^SCRAPE_/, "").replace(/\.xlsx$/i, "") : "Saved Search");
       }} />
-        </>
-      )}
-
-      {/* ─── Instagram Panel ─── */}
-      {platform === "Instagram" && (
-        <InstaPanel />
-      )}
     </main>
   );
 }
