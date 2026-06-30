@@ -1,16 +1,5 @@
 import { ChannelVideoRow, TranscriptRow } from "@/types";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function safeString(value: any): string {
-  if (value === null || value === undefined) return "";
-  return String(value);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function safeNumber(value: any): number {
-  const n = Number(value);
-  return isNaN(n) ? 0 : n;
-}
+import { extractNamedHashtags, safeNumber, safeString } from "@/lib/normalize-shared";
 
 function cleanWebVtt(raw: string): string {
   if (!raw || !raw.includes("-->")) return raw;
@@ -31,12 +20,7 @@ function extractHashtags(item: any): string[] {
     return item.challenges.map((c: { title?: string }) => c.title || "").filter(Boolean);
   }
   // Try "hashtags" array
-  if (Array.isArray(item.hashtags)) {
-    return item.hashtags.map((h: { name?: string } | string) =>
-      typeof h === "string" ? h : h.name || ""
-    ).filter(Boolean);
-  }
-  return [];
+  return extractNamedHashtags(item.hashtags);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

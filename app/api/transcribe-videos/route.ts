@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runActorAndGetResults } from "@/lib/apify";
+import { buildFilePrefix, buildTxtContent, sanitizeFilename, type VideoMeta } from "@/lib/transcription-files";
 import path from "path";
 import fs from "fs";
 
@@ -53,34 +54,6 @@ function cleanTikTokUrl(url: string): string {
   }
 }
 
-function sanitizeFilename(title: string): string {
-  return title
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "")
-    .substring(0, 100);
-}
-
-const MONTH_ABBR = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
-
-function buildFilePrefix(views: number, publishDate: string): string {
-  let datePart = "";
-  if (publishDate) {
-    const d = new Date(publishDate);
-    if (!isNaN(d.getTime())) {
-      const mmm = MONTH_ABBR[d.getMonth()];
-      const aa = String(d.getFullYear()).slice(-2);
-      datePart = `${mmm}${aa}`;
-    }
-  }
-  const v = views || 0;
-  const tier = v >= 10_000_000 ? "1A" : v >= 1_000_000 ? "2A" : "3A";
-  const viewsPart = String(v);
-  return datePart ? `${tier}_${viewsPart}-${datePart}-` : `${tier}_${viewsPart}-`;
-}
-
 function cleanWebVtt(raw: string): string {
   return raw
     .replace(/^WEBVTT\s*/i, "")
@@ -89,17 +62,6 @@ function cleanWebVtt(raw: string): string {
     .map((l) => l.trim())
     .filter(Boolean)
     .join(" ");
-}
-
-interface VideoMeta {
-  title: string;
-  views: number;
-  likes: number;
-  comments: number;
-  description: string;
-  hashtags: string;
-  videoUrl: string;
-  publishDate: string;
 }
 
 function getErrorSuffix(errorMsg: string): string {
@@ -120,24 +82,6 @@ function getErrorSuffix(errorMsg: string): string {
   if (msg.includes("actor") && msg.includes("failed")) return "_erro_actor_fail";
 
   return "_erro_unknown";
-}
-
-function buildTxtContent(meta: VideoMeta, transcript: string): string {
-  return `Title: ${meta.title}
-
-Description: ${meta.description}
-
-Hashtags: ${meta.hashtags}
-
-Transcription: ${transcript}
-
-Views: ${meta.views.toLocaleString("en-US")}
-
-Likes: ${meta.likes.toLocaleString("en-US")}
-
-Link: ${meta.videoUrl}
-
-Date: ${meta.publishDate}`;
 }
 
 export async function POST(request: NextRequest) {

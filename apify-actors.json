@@ -38,5 +38,17 @@
       "inputUrlMode": "array",
       "outputField": "posts"
     }
+  ],
+  "youtubeActors": [
+    {
+      "id": "streamers/youtube-scraper",
+      "name": "YouTube Scraper",
+      "default": true,
+      "inputUrlField": "startUrls",
+      "inputUrlMode": "array",
+      "supportsSearchQueries": true,
+      "supportsSubtitles": true,
+      "outputField": "items"
+    }
   ]
 }

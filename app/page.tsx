@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import ChannelForm from "@/components/ChannelForm";
 import type { SearchParams } from "@/components/ChannelForm";
 import VideoResultsTable from "@/components/VideoResultsTable";
 import TranscriptResultsTable from "@/components/TranscriptResultsTable";
 import SavedSearches from "@/components/SavedSearches";
 import InstaPanel from "@/components/insta_Panel";
+import YouTubePanel from "@/components/YouTubePanel";
 import { ChannelVideoRow, TranscriptRow } from "@/types";
 import { normalizeTranscripts } from "@/lib/normalize";
 
@@ -45,7 +47,7 @@ export default function Home() {
   const [elevenlabsVoices, setElevenlabsVoices] = useState<{ id: string; name: string; default: boolean }[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
   const [elevenlabsCredits, setElevenlabsCredits] = useState<{ characterCount: number; characterLimit: number; characterRemaining: number } | null>(null);
-  const [platform, setPlatform] = useState<"TikTok" | "Instagram">("TikTok");
+  const [platform, setPlatform] = useState<"TikTok" | "Instagram" | "YouTube">("TikTok");
 
   const fetchCredits = useCallback(async (accountId?: string) => {
     try {
@@ -1128,7 +1130,7 @@ export default function Home() {
   };
 
   return (
-    <main className="container">
+    <main className={`container platform-theme-${platform.toLowerCase()}`}>
       {/* ─── Platform Switch ─── */}
       <div className="platform-switch-container">
         <div className="platform-switch">
@@ -1136,13 +1138,22 @@ export default function Home() {
             className={`platform-btn ${platform === "TikTok" ? "active" : ""}`}
             onClick={() => setPlatform("TikTok")}
           >
-            🎵 TikTok
+            <Image src="/logo_tiktok.svg" alt="" className="platform-logo" width={18} height={18} aria-hidden="true" />
+            <span>TikTok</span>
+          </button>
+          <button
+            className={`platform-btn ${platform === "YouTube" ? "active" : ""}`}
+            onClick={() => setPlatform("YouTube")}
+          >
+            <Image src="/logo_youtube.svg" alt="" className="platform-logo" width={18} height={18} aria-hidden="true" />
+            <span>YouTube</span>
           </button>
           <button
             className={`platform-btn ${platform === "Instagram" ? "active" : ""}`}
             onClick={() => setPlatform("Instagram")}
           >
-            📸 Instagram
+            <Image src="/logo_insta.svg" alt="" className="platform-logo" width={18} height={18} aria-hidden="true" />
+            <span>Instagram</span>
           </button>
         </div>
       </div>
@@ -1493,6 +1504,10 @@ export default function Home() {
       {/* ─── Instagram Panel ─── */}
       {platform === "Instagram" && (
         <InstaPanel />
+      )}
+
+      {platform === "YouTube" && (
+        <YouTubePanel />
       )}
     </main>
   );

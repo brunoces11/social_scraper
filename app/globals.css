@@ -7,6 +7,10 @@
   --text-muted: #888;
   --primary: #00d4aa;
   --primary-hover: #00f0c0;
+  --platform-accent-start: #00d4aa;
+  --platform-accent-end: #00f0c0;
+  --platform-accent-shadow: rgba(0, 212, 170, 0.28);
+  --platform-accent-text: #000;
   --danger: #ff4d4d;
   --danger-bg: rgba(255, 77, 77, 0.1);
   --warning-bg: rgba(255, 200, 50, 0.1);
@@ -43,6 +47,28 @@ h1 {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.platform-theme-youtube {
+  --platform-accent-start: #ff4d4d;
+  --platform-accent-end: #d61c1c;
+  --platform-accent-shadow: rgba(214, 28, 28, 0.3);
+  --platform-accent-text: #fff;
+}
+
+.platform-theme-instagram {
+  --platform-accent-start: #f58529;
+  --platform-accent-end: #dd2a7b;
+  --platform-accent-shadow: rgba(221, 42, 123, 0.28);
+  --platform-accent-text: #fff;
+}
+
+.platform-theme-youtube h1,
+.platform-theme-instagram .panel h2 {
+  background: linear-gradient(135deg, var(--platform-accent-start), var(--platform-accent-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
@@ -814,6 +840,10 @@ tbody tr:last-child td {
 }
 
 .platform-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.6rem 1.5rem;
   border: none;
   background: transparent;
@@ -826,16 +856,26 @@ tbody tr:last-child td {
   white-space: nowrap;
 }
 
+.platform-logo {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+  display: block;
+}
+
 .platform-btn:hover {
   color: var(--text);
 }
 
 .platform-btn.active {
-  background: var(--primary);
-  color: #000;
+  background: linear-gradient(135deg, var(--platform-accent-start), var(--platform-accent-end));
+  color: var(--platform-accent-text);
   font-weight: 700;
+  box-shadow: 0 10px 24px var(--platform-accent-shadow);
 }
 
 .platform-btn.active:hover {
-  background: var(--primary-hover);
+  background: linear-gradient(135deg, var(--platform-accent-start), var(--platform-accent-end));
+  filter: brightness(1.04);
 }

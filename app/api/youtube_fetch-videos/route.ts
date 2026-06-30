@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchTikTokVideosByUrl } from "@/lib/video-fetch/tiktok";
+import { fetchYouTubeVideosByUrl } from "@/lib/video-fetch/youtube";
 import { VideoFetchRequestError } from "@/lib/video-fetch/shared";
 
 export const maxDuration = 300;
@@ -7,7 +7,7 @@ export const maxDuration = 300;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const result = await fetchTikTokVideosByUrl(body);
+    const result = await fetchYouTubeVideosByUrl(body);
     return NextResponse.json(result);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";

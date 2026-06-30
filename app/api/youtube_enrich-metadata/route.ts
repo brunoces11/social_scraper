@@ -4,5 +4,5 @@ import { handleEnrichmentPost } from "@/lib/enrichment";
 export const maxDuration = 600;
 
 export async function POST(request: NextRequest) {
-  return handleEnrichmentPost(request, "instagram");
+  return handleEnrichmentPost(request, "youtube");
 }
