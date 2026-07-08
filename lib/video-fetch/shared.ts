@@ -1,5 +1,6 @@
 import { ChannelVideoRow } from "@/types";
 import { getBlacklist, saveSearchToXls } from "@/lib/xls";
+import type { PlatformId } from "@/lib/platforms";
 
 export type VideoFetchRequestParams = {
   videoUrls?: string[];
@@ -30,9 +31,10 @@ export function assertVideoUrls(videoUrls: unknown): asserts videoUrls is string
 
 export function finalizeVideoFetchRows(
   allRows: ChannelVideoRow[],
-  xlsLabel?: string
+  xlsLabel?: string,
+  platform: PlatformId = "tiktok"
 ): VideoFetchResult {
-  const blacklist = getBlacklist();
+  const blacklist = getBlacklist(platform);
   const rows = allRows.filter((r) => !blacklist.has(r.videoUrl));
   rows.sort((a, b) => b.views - a.views);
 
@@ -49,7 +51,7 @@ export function finalizeVideoFetchRows(
       comments: r.comments ?? "",
       publish_date: r.publishDate ?? "",
     }));
-    savedFile = saveSearchToXls(label, xlsRows);
+    savedFile = saveSearchToXls(label, xlsRows, platform);
   } catch (xlsErr) {
     console.error("Error saving XLS:", xlsErr);
   }

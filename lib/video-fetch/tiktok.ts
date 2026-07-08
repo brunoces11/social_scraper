@@ -17,5 +17,5 @@ export async function fetchTikTokVideosByUrl(params: VideoFetchRequestParams): P
   const rawItems = await runActorAndGetResults(actorId, input, accountId);
   const allRows = normalizeChannelVideos(rawItems);
 
-  return finalizeVideoFetchRows(allRows, xlsLabel);
+  return finalizeVideoFetchRows(allRows, xlsLabel, "tiktok");
 }

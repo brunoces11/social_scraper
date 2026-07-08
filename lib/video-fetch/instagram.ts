@@ -30,5 +30,5 @@ export async function fetchInstagramVideosByUrl(params: VideoFetchRequestParams)
   const rawItems = await runActorAndGetResults(hashtagActor.id, input, accountId);
   const allRows = normalizeInstagramHashtagVideos(rawItems);
 
-  return finalizeVideoFetchRows(allRows, xlsLabel);
+  return finalizeVideoFetchRows(allRows, xlsLabel, "instagram");
 }

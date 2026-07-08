@@ -48,5 +48,5 @@ export async function fetchTikTokChannelSearch(params: SearchRequestParams): Pro
   const rawItems = await runActorAndGetResults(actorId, input, accountId);
   const allRows = normalizeChannelVideos(rawItems);
 
-  return finalizeSearchRows(allRows, { channelUrl, keyword, hashtag });
+  return finalizeSearchRows(allRows, { channelUrl, keyword, hashtag }, "tiktok");
 }

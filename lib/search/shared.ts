@@ -1,5 +1,6 @@
 import { ChannelVideoRow } from "@/types";
 import { buildSearchLabel, getBlacklist, saveSearchToXls } from "@/lib/xls";
+import type { PlatformId } from "@/lib/platforms";
 
 export type SearchRequestParams = {
   channelUrl?: string;
@@ -41,16 +42,20 @@ export function toProxyCountryCode(value: unknown): string {
 
 export function finalizeSearchRows(
   allRows: ChannelVideoRow[],
-  labelParams: { channelUrl?: string; keyword?: string; hashtag?: string }
+  labelParams: { channelUrl?: string; keyword?: string; hashtag?: string; monthsBack?: number | null },
+  platform: PlatformId = "tiktok"
 ): SearchResult {
-  const blacklist = getBlacklist();
+  const blacklist = getBlacklist(platform);
   const rows = allRows.filter((r) => !blacklist.has(r.videoUrl));
 
   rows.sort((a, b) => b.views - a.views);
 
   let savedFile = "";
   try {
-    const label = buildSearchLabel(labelParams);
+    const label = buildSearchLabel({
+      ...labelParams,
+      itemCount: platform === "youtube" ? rows.length : undefined,
+    });
     const xlsRows = rows.map((r) => ({
       video_title: r.title,
       views: r.views,
@@ -61,7 +66,7 @@ export function finalizeSearchRows(
       comments: r.comments ?? "",
       publish_date: r.publishDate ?? "",
     }));
-    savedFile = saveSearchToXls(label, xlsRows);
+    savedFile = saveSearchToXls(label, xlsRows, platform);
   } catch (xlsErr) {
     console.error("Error saving XLS:", xlsErr);
   }

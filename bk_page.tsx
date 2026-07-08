@@ -987,7 +987,7 @@ export default function Home() {
         const res = await fetch("/api/saved-searches", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename: currentXlsFile, videoUrls: selectedVideoUrls }),
+          body: JSON.stringify({ filename: currentXlsFile, videoUrls: selectedVideoUrls, platform: "tiktok" }),
         });
         const data = await res.json();
         if (res.ok) {
@@ -1442,7 +1442,7 @@ export default function Home() {
       <TranscriptResultsTable rows={transcriptRows} />
 
       {/* ─── Saved Searches ─── */}
-      <SavedSearches onLoad={(rows, filename) => {
+      <SavedSearches platform="tiktok" onLoad={(rows, filename) => {
         const mapped: ChannelVideoRow[] = rows.map((r: Record<string, unknown>) => ({
           title: String(r.video_title || ""),
           views: Number(r.views) || 0,

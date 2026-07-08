@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import InstaChannelForm, { type InstaSearchParams } from "@/components/insta_ChannelForm";
 import VideoResultsTable from "@/components/VideoResultsTable";
 import TranscriptResultsTable from "@/components/TranscriptResultsTable";
+import SavedSearches from "@/components/SavedSearches";
 import { ChannelVideoRow, TranscriptRow } from "@/types";
 import { normalizeTranscripts } from "@/lib/normalize";
 
@@ -423,6 +424,32 @@ export default function InstaPanel() {
           ElevenLabs: {elevenlabsCredits.characterCount} / {elevenlabsCredits.characterLimit} characters ({elevenlabsCredits.characterRemaining} remaining)
         </div>
       )}
+
+      <SavedSearches platform="instagram" onLoad={(rows, filename) => {
+        const mapped: ChannelVideoRow[] = rows.map((row: Record<string, unknown>) => {
+          const videoUrl = String(row.video_url || "");
+          const videoId = videoUrl.match(/\/reel\/([^/?]+)/)?.[1] || "";
+          return {
+            title: String(row.video_title || ""),
+            views: Number(row.views) || 0,
+            description: String(row.description || ""),
+            likes: Number(row.likes) || 0,
+            hashtags: String(row.hashtags || "").split(", ").filter(Boolean),
+            videoId,
+            videoUrl,
+            comments: Number(row.comments) || 0,
+            publishDate: String(row.publish_date || ""),
+          };
+        });
+        mapped.sort((a, b) => b.views - a.views);
+        setChannelRows(mapped);
+        setSelectedVideoUrls(mapped.map((row) => row.videoUrl));
+        setTranscriptRows([]);
+        setTranscriptStatus(null);
+        setDownloadStatus(null);
+        setDetailLogs([]);
+        if (filename) setCurrentXlsFile(filename);
+      }} />
 
       {channelRows.length > 0 && (
         <>

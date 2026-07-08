@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import PlatformSearchForm, { type PlatformSearchParams } from "@/components/PlatformSearchForm";
 import VideoResultsTable from "@/components/VideoResultsTable";
 import TranscriptResultsTable from "@/components/TranscriptResultsTable";
+import SavedSearches from "@/components/SavedSearches";
 import { ChannelVideoRow, TranscriptRow } from "@/types";
 
 function isYouTubeUrl(value: string): boolean {
@@ -509,6 +510,32 @@ export default function YouTubePanel() {
       />
 
       <TranscriptResultsTable rows={transcriptRows} />
+
+      <SavedSearches platform="youtube" onLoad={(rows, filename) => {
+        const mapped: ChannelVideoRow[] = rows.map((row: Record<string, unknown>) => {
+          const videoUrl = String(row.video_url || "");
+          const videoId = videoUrl.match(/[?&]v=([^&]+)/)?.[1] || videoUrl.match(/\/shorts\/([^?]+)/)?.[1] || videoUrl.match(/youtu\.be\/([^?]+)/)?.[1] || "";
+          return {
+            title: String(row.video_title || ""),
+            views: Number(row.views) || 0,
+            description: String(row.description || ""),
+            likes: Number(row.likes) || 0,
+            hashtags: String(row.hashtags || "").split(", ").filter(Boolean),
+            videoId,
+            videoUrl,
+            comments: Number(row.comments) || 0,
+            publishDate: String(row.publish_date || ""),
+          };
+        });
+        mapped.sort((a, b) => b.views - a.views);
+        setChannelRows(mapped);
+        setSelectedVideoUrls(mapped.map((row) => row.videoUrl));
+        setTranscriptRows([]);
+        setDetailLogs([]);
+        if (filename) setCurrentXlsFile(filename);
+        setResultLabel(filename ? filename.replace(/^SCRAPE_/, "").replace(/\.xlsx$/i, "") : "YouTube Saved Search");
+        setStatus(`Loaded ${mapped.length} YouTube video(s).`);
+      }} />
 
       {showPromptModal && (
         <div className="modal-overlay" onClick={() => setShowPromptModal(false)}>

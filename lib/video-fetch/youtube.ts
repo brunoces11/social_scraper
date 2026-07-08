@@ -23,5 +23,5 @@ export async function fetchYouTubeVideosByUrl(params: VideoFetchRequestParams): 
   const rawItems = await runActorAndGetResults(YOUTUBE_ACTOR_ID, input, accountId);
   const allRows = normalizeYouTubeVideos(rawItems);
 
-  return finalizeVideoFetchRows(allRows, xlsLabel);
+  return finalizeVideoFetchRows(allRows, xlsLabel, "youtube");
 }

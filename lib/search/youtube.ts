@@ -74,5 +74,5 @@ export async function fetchYouTubeChannelSearch(params: SearchRequestParams): Pr
   const rawItems = await runActorAndGetResults(YOUTUBE_ACTOR_ID, input, accountId);
   const allRows = normalizeYouTubeVideos(rawItems);
 
-  return finalizeSearchRows(allRows, { channelUrl, keyword, hashtag });
+  return finalizeSearchRows(allRows, { channelUrl, keyword, hashtag, monthsBack: popularMonthsBack }, "youtube");
 }

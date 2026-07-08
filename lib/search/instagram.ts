@@ -83,5 +83,5 @@ export async function fetchInstagramChannelSearch(params: SearchRequestParams): 
 
   const uniqueRows = Array.from(new Map(allRows.map((row) => [row.videoUrl, row])).values());
 
-  return finalizeSearchRows(uniqueRows, { channelUrl: profileUrl, keyword, hashtag });
+  return finalizeSearchRows(uniqueRows, { channelUrl: profileUrl, keyword, hashtag }, "instagram");
 }
