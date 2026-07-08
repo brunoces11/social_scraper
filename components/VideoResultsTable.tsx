@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, type CSSProperties } from "react";
 import { ChannelVideoRow } from "@/types";
 
 type SortKey = keyof ChannelVideoRow | null;
 type SortDir = "asc" | "desc";
+type ColumnKey = "checkbox" | "date" | "views" | "likes" | "comments" | "title" | "description" | "tags" | "url";
 
 type VideoResultsTableProps = {
   rows: ChannelVideoRow[];
   selectedVideoUrls: string[];
   onSelectionChange: (selected: string[]) => void;
   label?: string;
+  variant?: "default" | "youtube";
 };
 
 function formatDate(dateStr: string | undefined): string {
@@ -23,11 +25,23 @@ function formatDate(dateStr: string | undefined): string {
   return `${dd}/${mm}/${yy}`;
 }
 
+const YOUTUBE_COLUMN_WIDTHS: Partial<Record<ColumnKey, number>> = {
+  checkbox: 40,
+  date: 100,
+  views: 100,
+  likes: 90,
+  comments: 60,
+  description: 110,
+  tags: 90,
+  url: 60,
+};
+
 export default function VideoResultsTable({
   rows,
   selectedVideoUrls,
   onSelectionChange,
   label,
+  variant = "default",
 }: VideoResultsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("views");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -60,6 +74,11 @@ export default function VideoResultsTable({
   const sortIndicator = (key: SortKey) =>
     sortKey === key ? (sortDir === "asc" ? " ▲" : " ▼") : "";
 
+  const getColumnWidth = (key: ColumnKey, fallback: number): CSSProperties => {
+    const width = variant === "youtube" ? YOUTUBE_COLUMN_WIDTHS[key] : fallback;
+    return width ? { width, minWidth: width, maxWidth: width } : {};
+  };
+
   const allSelected = rows.length > 0 && rows.every((r) => selectedVideoUrls.includes(r.videoUrl));
 
   const toggleAll = () => {
@@ -84,12 +103,17 @@ export default function VideoResultsTable({
     const table = tableRef.current;
     if (!table) return;
     const th = table.querySelectorAll("thead th")[colIndex] as HTMLElement;
+    const col = table.querySelectorAll("col")[colIndex] as HTMLTableColElement | undefined;
     resizingRef.current = { col: colIndex, startX: e.clientX, startW: th.offsetWidth };
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!resizingRef.current) return;
       const diff = ev.clientX - resizingRef.current.startX;
       const newW = Math.max(40, resizingRef.current.startW + diff);
+      if (col) {
+        col.style.width = `${newW}px`;
+        col.style.minWidth = `${newW}px`;
+      }
       th.style.width = `${newW}px`;
       th.style.minWidth = `${newW}px`;
     };
@@ -110,41 +134,58 @@ export default function VideoResultsTable({
     <div className="table-container">
       <h2>{label ? `${label} — ` : ""}Results ({rows.length} videos)</h2>
       <div className="table-scroll">
-        <table ref={tableRef} style={{ tableLayout: "fixed" }}>
+        <table ref={tableRef} className={variant === "youtube" ? "video-results-table video-results-table-youtube" : "video-results-table"} style={{ tableLayout: "fixed" }}>
+          {variant === "youtube" && (
+            <colgroup>
+              <col className="yt-col-checkbox" style={getColumnWidth("checkbox", 40)} />
+              <col className="yt-col-date" style={getColumnWidth("date", 80)} />
+              <col className="yt-col-views" style={getColumnWidth("views", 90)} />
+              <col className="yt-col-likes" style={getColumnWidth("likes", 80)} />
+              <col className="yt-col-comments" style={getColumnWidth("comments", 80)} />
+              <col className="yt-col-title" />
+              <col className="yt-col-description" style={getColumnWidth("description", 250)} />
+              <col className="yt-col-tags" style={getColumnWidth("tags", 150)} />
+              <col className="yt-col-link" style={getColumnWidth("url", 50)} />
+            </colgroup>
+          )}
           <thead>
             <tr>
-              <th className="col-checkbox" style={{ width: 40 }}>
+              <th className="col-checkbox resizable" style={getColumnWidth("checkbox", 40)}>
                 <input type="checkbox" checked={allSelected} onChange={toggleAll} title="Select all" />
+                <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 0)} />
               </th>
-              <th className="sortable resizable" onClick={() => handleSort("publishDate")} style={{ width: 80 }}>
+              <th className="sortable resizable" onClick={() => handleSort("publishDate")} style={getColumnWidth("date", 80)}>
                 Data{sortIndicator("publishDate")}
                 <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 1)} />
               </th>
-              <th className="col-number sortable resizable" onClick={() => handleSort("views")} style={{ width: 90 }}>
+              <th className="col-number sortable resizable" onClick={() => handleSort("views")} style={getColumnWidth("views", 90)}>
                 Views{sortIndicator("views")}
                 <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 2)} />
               </th>
-              <th className="col-number sortable resizable" onClick={() => handleSort("likes")} style={{ width: 80 }}>
+              <th className="col-number sortable resizable" onClick={() => handleSort("likes")} style={getColumnWidth("likes", 80)}>
                 Likes{sortIndicator("likes")}
                 <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 3)} />
               </th>
-              <th className="col-number sortable resizable" onClick={() => handleSort("comments")} style={{ width: 80 }}>
+              <th className="col-number sortable resizable" onClick={() => handleSort("comments")} style={getColumnWidth("comments", 80)}>
                 💬{sortIndicator("comments")}
                 <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 4)} />
               </th>
-              <th className="sortable resizable" onClick={() => handleSort("title")} style={{ width: 200 }}>
+              <th className="sortable resizable" onClick={() => handleSort("title")} style={getColumnWidth("title", 200)}>
                 Title{sortIndicator("title")}
                 <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 5)} />
               </th>
-              <th className="sortable resizable" onClick={() => handleSort("description")} style={{ width: 250 }}>
+              <th className="sortable resizable" onClick={() => handleSort("description")} style={getColumnWidth("description", 250)}>
                 Description{sortIndicator("description")}
                 <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 6)} />
               </th>
-              <th className="sortable resizable" onClick={() => handleSort("hashtags")} style={{ width: 150 }}>
+              <th className="sortable resizable" onClick={() => handleSort("hashtags")} style={getColumnWidth("tags", 150)}>
                 #{sortIndicator("hashtags")}
                 <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 7)} />
               </th>
-              <th style={{ width: 50 }}>URL</th>
+              <th className="resizable" style={getColumnWidth("url", 50)}>
+                URL
+                <span className="resize-handle" onMouseDown={(e) => handleMouseDown(e, 8)} />
+              </th>
             </tr>
           </thead>
           <tbody>

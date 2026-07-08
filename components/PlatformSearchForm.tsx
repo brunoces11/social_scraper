@@ -11,6 +11,7 @@ export type PlatformSearchParams = {
   hashtag: string;
   maxVideos: number;
   countryCode: string;
+  monthsBack?: number;
 };
 
 type PlatformSearchFormProps = {
@@ -68,6 +69,7 @@ export default function PlatformSearchForm({ platform, onSubmit, isLoading }: Pl
   const [keyword, setKeyword] = useState("");
   const [hashtag, setHashtag] = useState("");
   const [maxVideos, setMaxVideos] = useState(50);
+  const [monthsBack, setMonthsBack] = useState("");
   const [countryCode, setCountryCode] = useState("BR");
 
   const hasAnyInput = url.trim() || keyword.trim() || hashtag.trim();
@@ -82,6 +84,7 @@ export default function PlatformSearchForm({ platform, onSubmit, isLoading }: Pl
       hashtag: hashtag.trim(),
       maxVideos,
       countryCode,
+      ...(platform === "youtube" && Number(monthsBack) > 0 ? { monthsBack: Number(monthsBack) } : {}),
     });
   };
 
@@ -154,6 +157,21 @@ export default function PlatformSearchForm({ platform, onSubmit, isLoading }: Pl
             disabled={isLoading}
           />
         </div>
+        {platform === "youtube" && (
+          <div className="form-group form-group-months">
+            <label htmlFor="months-back">Months</label>
+            <input
+              id="months-back"
+              type="number"
+              min={1}
+              max={120}
+              placeholder="12"
+              value={monthsBack}
+              onChange={(e) => setMonthsBack(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+        )}
         <div className="form-group form-group-btn">
           <button type="submit" disabled={isLoading || !hasAnyInput || !isUrlValid} className="btn btn-primary">
             {isLoading ? "Searching..." : "🔍 Search"}

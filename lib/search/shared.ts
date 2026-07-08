@@ -7,6 +7,7 @@ export type SearchRequestParams = {
   keyword?: string;
   hashtag?: string;
   maxVideos?: number;
+  monthsBack?: number;
   countryCode?: string;
   accountId?: string;
 };

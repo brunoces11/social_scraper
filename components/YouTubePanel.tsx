@@ -505,6 +505,7 @@ export default function YouTubePanel() {
         selectedVideoUrls={selectedVideoUrls}
         onSelectionChange={setSelectedVideoUrls}
         label={currentXlsFile || resultLabel}
+        variant="youtube"
       />
 
       <TranscriptResultsTable rows={transcriptRows} />

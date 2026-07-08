@@ -24,8 +24,15 @@ function hashtagToUrl(hashtag: string): string {
   return `https://www.youtube.com/hashtag/${encodeURIComponent(hashtag.replace(/^#/, ""))}`;
 }
 
+function toMonthsBack(value: unknown): number | null {
+  const months = Number(value);
+  if (!Number.isFinite(months) || months <= 0) return null;
+  return Math.min(Math.floor(months), 120);
+}
+
 export async function fetchYouTubeChannelSearch(params: SearchRequestParams): Promise<SearchResult> {
-  const { channelUrl, keyword, hashtag, maxVideos = 50, accountId } = params;
+  const { channelUrl, keyword, hashtag, maxVideos = 50, monthsBack, accountId } = params;
+  const popularMonthsBack = toMonthsBack(monthsBack);
 
   if (!hasSearchInput(params)) {
     throw new SearchRequestError("Fill in at least one field: Channel URL, keyword, or hashtag.", 400);
@@ -53,6 +60,11 @@ export async function fetchYouTubeChannelSearch(params: SearchRequestParams): Pr
 
   if (startUrls.length > 0) {
     input.startUrls = startUrls;
+  }
+
+  if (channelUrl && popularMonthsBack) {
+    input.oldestPostDate = `${popularMonthsBack} months`;
+    input.sortVideosBy = "POPULAR";
   }
 
   if (keyword && startUrls.length === 0) {
