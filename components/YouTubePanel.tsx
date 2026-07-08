@@ -233,6 +233,7 @@ export default function YouTubePanel() {
         body: JSON.stringify({
           videoUrls: selectedRows.map((row) => row.videoUrl),
           videosMeta: selectedRows.map(toVideoMeta),
+          platform: "youtube",
           accountId: selectedAccountIdRef.current,
         }),
       });
@@ -285,6 +286,7 @@ export default function YouTubePanel() {
         body: JSON.stringify({
           videos,
           videosMeta: selectedRows.map(toVideoMeta),
+          platform: "youtube",
         }),
       });
       const data = await res.json();
@@ -320,6 +322,7 @@ export default function YouTubePanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           videoUrls: selectedRows.map((row) => row.videoUrl),
+          platform: "youtube",
           titles: selectedRows.map((row) => row.title),
           viewsList: selectedRows.map((row) => row.views),
           publishDates: selectedRows.map((row) => row.publishDate || ""),

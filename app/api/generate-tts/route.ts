@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenForElevenLabsAccount } from "@/lib/elevenlabs-accounts";
 import path from "path";
 import fs from "fs";
+import { ensureDownloadDir, resolvePlatformFromPayload } from "@/lib/download-dirs";
 
 export const maxDuration = 120;
-
-const DOWNLOAD_DIR = path.join(process.cwd(), "downloads");
 
 function sanitizeFilename(title: string): string {
   return title
@@ -37,13 +36,15 @@ function buildFilePrefix(views: number, publishDate: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, title, accountId, voiceId, views, publishDate } = (await request.json()) as {
-      text: string;
-      title: string;
+    const { text, title, accountId, voiceId, views, publishDate, platform, videoUrls } = (await request.json()) as {
+      text?: string;
+      title?: string;
       accountId?: string;
       voiceId: string;
       views?: number;
       publishDate?: string;
+      platform?: string;
+      videoUrls?: string[];
     };
 
     const apiKey = getTokenForElevenLabsAccount(accountId);
@@ -88,15 +89,13 @@ export async function POST(request: NextRequest) {
 
         const buffer = Buffer.from(audioData, "base64");
 
-        if (!fs.existsSync(DOWNLOAD_DIR)) {
-          fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
-        }
+        const downloadDir = ensureDownloadDir(resolvePlatformFromPayload(platform, videoUrls));
 
         const prefix = buildFilePrefix(views || 0, publishDate || "");
-        const filename = `${prefix}${sanitizeFilename(title)}.mp3`;
-        fs.writeFileSync(path.join(DOWNLOAD_DIR, filename), buffer);
+        const filename = `${prefix}${sanitizeFilename(title || "audio")}.mp3`;
+        fs.writeFileSync(path.join(downloadDir, filename), buffer);
 
-        return NextResponse.json({ status: "ok", filename });
+        return NextResponse.json({ status: "ok", filename, downloadDir });
       } catch (attemptErr) {
         lastError = attemptErr instanceof Error ? attemptErr.message : "Unknown error";
         if (attempt < MAX_RETRIES && lastError.includes("500")) {

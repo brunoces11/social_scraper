@@ -273,6 +273,7 @@ export default function Home() {
         body: JSON.stringify({
           videoUrls: urls,
           videosMeta: metaForUrls,
+          platform: "tiktok",
           actorId: selectedTranscriptActor,
           accountId: selectedAccountId,
         }),
@@ -333,7 +334,7 @@ export default function Home() {
       if (errorCount > 0) parts.push(`❌ ${errorCount} error(s)`);
 
       let statusMsg = `Completed (${total} video(s)): ${parts.join(" · ")}`;
-      if (saved > 0) statusMsg += ` — .txt file(s) saved to /downloads`;
+      if (saved > 0) statusMsg += ` — .txt file(s) saved to /downloads/TIKTOK`;
       if (saved === 0 && noTranscript > 0 && errorCount === 0) {
         statusMsg += ` — no video has a transcript available (no speech/subtitles detected)`;
       }
@@ -372,6 +373,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           videoUrls: selectedVideoUrls,
+          platform: "tiktok",
           titles: getSelectedMeta().map((m) => m.title),
           viewsList: getSelectedMeta().map((m) => m.views),
           publishDates: getSelectedMeta().map((m) => m.publishDate),
@@ -427,7 +429,7 @@ export default function Home() {
       const cfRes = await fetch("/api/check-files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videos: checkPayload }),
+        body: JSON.stringify({ videos: checkPayload, platform: "tiktok" }),
       });
       if (cfRes.ok) {
         const cfData = await cfRes.json();
@@ -470,7 +472,7 @@ export default function Home() {
         const checkRes = await fetch("/api/check-transcripts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ videos: checkPayload }),
+          body: JSON.stringify({ videos: checkPayload, platform: "tiktok" }),
         });
         if (checkRes.ok) {
           const checkData = await checkRes.json();
@@ -554,7 +556,7 @@ export default function Home() {
         const enrichRes = await fetch("/api/enrich-metadata", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ videos: videosForLLM, videosMeta: videosMetaFull }),
+          body: JSON.stringify({ videos: videosForLLM, videosMeta: videosMetaFull, platform: "tiktok" }),
         });
         enrichData = await enrichRes.json();
         if (enrichData?.debugLogs) {
@@ -606,6 +608,7 @@ export default function Home() {
             body: JSON.stringify({
               text: item.transcription,
               title: rowMeta?.title || item.title,
+              platform: "tiktok",
               accountId: selectedElevenLabsAccountId,
               voiceId: selectedVoiceId,
               views: rowMeta?.views || 0,
@@ -660,6 +663,7 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             videoUrls: [url],
+            platform: "tiktok",
             titles: [title],
             viewsList: [meta[i]?.views || 0],
             publishDates: [meta[i]?.publishDate || ""],
@@ -696,7 +700,7 @@ export default function Home() {
     if (totalOk > 0) dlParts.push(`${totalOk} downloaded`);
     if (totalSkipped > 0) dlParts.push(`${totalSkipped} skipped`);
     if (totalFailed > 0) dlParts.push(`${totalFailed} failed`);
-    setDownloadStatus(`Download completed: ${dlParts.join(", ")}. Folder: downloads/`);
+    setDownloadStatus(`Download completed: ${dlParts.join(", ")}. Folder: downloads/TIKTOK/`);
     setIsDownloadingAll(false);
   };
 
@@ -736,6 +740,7 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             videoUrls: [url],
+            platform: "tiktok",
             titles: [title],
             mode: "x5",
             viewsList: [meta[i]?.views || 0],
@@ -769,7 +774,7 @@ export default function Home() {
       }
     }
 
-    setDownloadX5Status(`Download x5 completed: ${totalOk} file(s) succeeded, ${totalFailed} failure(s). Folder: downloads/`);
+    setDownloadX5Status(`Download x5 completed: ${totalOk} file(s) succeeded, ${totalFailed} failure(s). Folder: downloads/TIKTOK/`);
     setIsDownloadingX5(false);
   };
 
@@ -802,7 +807,7 @@ export default function Home() {
         const checkRes = await fetch("/api/check-transcripts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ videos: checkPayload }),
+          body: JSON.stringify({ videos: checkPayload, platform: "tiktok" }),
         });
         if (checkRes.ok) {
           const checkData = await checkRes.json();
@@ -884,7 +889,7 @@ export default function Home() {
       const res = await fetch("/api/enrich-metadata", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videos: videosForLLM, videosMeta: videosMetaFull }),
+        body: JSON.stringify({ videos: videosForLLM, videosMeta: videosMetaFull, platform: "tiktok" }),
       });
 
       const data = await res.json();
@@ -930,6 +935,7 @@ export default function Home() {
               body: JSON.stringify({
                 text: item.transcription,
                 title: rowMeta?.title || item.title,
+                platform: "tiktok",
                 accountId: selectedElevenLabsAccountId,
                 voiceId: selectedVoiceId,
                 views: rowMeta?.views || 0,
@@ -963,7 +969,7 @@ export default function Home() {
       if (ttsFailed > 0) ttsParts.push(`${ttsFailed} TTS error(s)`);
       const ttsInfo = ttsParts.length > 0 ? ` · TTS: ${ttsParts.join(", ")}` : "";
 
-      setRunAIStatus(`AI enrichment completed: ${saved} file(s) saved, ${errorCount} error(s)${ttsInfo}. Folder: downloads/`);
+      setRunAIStatus(`AI enrichment completed: ${saved} file(s) saved, ${errorCount} error(s)${ttsInfo}. Folder: downloads/TIKTOK/`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       setError(`Network error: ${msg}`);

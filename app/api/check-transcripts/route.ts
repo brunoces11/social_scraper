@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
-
-const DOWNLOAD_DIR = path.join(process.cwd(), "downloads");
+import { getDownloadDir, resolvePlatformFromPayload } from "@/lib/download-dirs";
 
 function sanitizeFilename(title: string): string {
   return title
@@ -46,7 +45,8 @@ function extractTranscription(content: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { videos } = await request.json() as {
+    const { videos, platform } = await request.json() as {
+      platform?: string;
       videos: { title: string; videoUrl: string; views?: number; publishDate?: string }[];
     };
 
@@ -54,13 +54,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No videos provided." }, { status: 400 });
     }
 
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
+    const downloadDir = getDownloadDir(resolvePlatformFromPayload(platform, videos.map((v) => v.videoUrl)));
+
+    if (!fs.existsSync(downloadDir)) {
       return NextResponse.json({
         results: videos.map((v) => ({ videoUrl: v.videoUrl, found: false, transcription: null })),
       });
     }
 
-    const allFiles = fs.readdirSync(DOWNLOAD_DIR);
+    const allFiles = fs.readdirSync(downloadDir);
 
     const results = videos.map((v) => {
       const safeName = sanitizeFilename(v.title);
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
 
       if (matches.length === 1) {
         // Exact match — read transcription from file
-        const content = fs.readFileSync(path.join(DOWNLOAD_DIR, matches[0]), "utf-8");
+        const content = fs.readFileSync(path.join(downloadDir, matches[0]), "utf-8");
         const transcription = extractTranscription(content);
         return { videoUrl: v.videoUrl, found: true, transcription };
       }

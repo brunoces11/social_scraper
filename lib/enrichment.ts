@@ -5,10 +5,10 @@ import type { PlatformId } from "@/lib/platforms";
 import { normalizePlatform } from "@/lib/platforms";
 import { readPlatformPrompt } from "@/lib/platform-prompts";
 import { buildFilePrefix, sanitizeFilename } from "@/lib/transcription-files";
+import { ensureDownloadDir } from "@/lib/download-dirs";
 
 export const ENRICHMENT_MAX_DURATION = 600;
 
-const DOWNLOAD_DIR = path.join(process.cwd(), "downloads");
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const BATCH_SIZE = 10;
 
@@ -113,6 +113,7 @@ export async function handleEnrichmentPost(
 
     const body = await request.json();
     const platform = normalizePlatform(body.platform, defaultPlatform);
+    const downloadDir = ensureDownloadDir(platform);
     const { videos, videosMeta } = body as {
       platform?: PlatformId;
       videos: VideoForLLM[];
@@ -128,10 +129,6 @@ export async function handleEnrichmentPost(
     const metaMap = new Map<string, VideoMeta>();
     for (const m of videosMeta || []) {
       metaMap.set(m.videoId, m);
-    }
-
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
-      fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
     }
 
     const allLlmVideos: VideoForLLM[] = [];
@@ -183,7 +180,7 @@ export async function handleEnrichmentPost(
 
           const prefix = buildFilePrefix(meta.views, meta.publishDate);
           const txtContent = buildEnrichedTxtContent(llmItem, meta);
-          const txtPath = path.join(DOWNLOAD_DIR, `${prefix}${safeName}.txt`);
+          const txtPath = path.join(downloadDir, `${prefix}${safeName}.txt`);
           fs.writeFileSync(txtPath, txtContent, "utf-8");
           savedFiles.push(`${prefix}${safeName}.txt`);
           debugLogs.push(`[SAVED] ${prefix}${safeName}.txt (${txtContent.length} chars)`);
@@ -198,7 +195,7 @@ export async function handleEnrichmentPost(
     }
 
     debugLogs.push(`[RESULT] saved=${savedFiles.length}, errors=${errors.length}, totalBatches=${totalBatches}`);
-    return NextResponse.json({ savedFiles, errors, debugLogs, downloadDir: DOWNLOAD_DIR, llmVideos: allLlmVideos });
+    return NextResponse.json({ savedFiles, errors, debugLogs, downloadDir, llmVideos: allLlmVideos });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: msg, debugLogs }, { status: 500 });

@@ -3,10 +3,9 @@ import path from "path";
 import fs from "fs";
 import { execSync } from "child_process";
 import { buildFilePrefix, buildTxtContent, sanitizeFilename, type VideoMeta } from "@/lib/transcription-files";
+import { ensureDownloadDir } from "@/lib/download-dirs";
 
 export const maxDuration = 300;
-
-const DOWNLOAD_DIR = path.join(process.cwd(), "downloads");
 
 function extractInstagramShortcode(url: string): string {
   const match = url.match(/\/reel\/([A-Za-z0-9_-]+)/);
@@ -62,6 +61,7 @@ async function transcribeWithWhisper(audioPath: string): Promise<string> {
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { videoUrls, videosMeta = [] } = body;
+  const downloadDir = ensureDownloadDir("instagram");
   const debugLogs: string[] = [];
 
   try {
@@ -69,10 +69,6 @@ export async function POST(request: NextRequest) {
 
     if (!Array.isArray(videoUrls) || videoUrls.length === 0) {
       return NextResponse.json({ error: "Select at least one video." }, { status: 400 });
-    }
-
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
-      fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
     }
 
     const savedFiles: string[] = [];
@@ -104,7 +100,7 @@ export async function POST(request: NextRequest) {
         const prefix = buildFilePrefix(meta.views, meta.publishDate);
 
         // Download audio
-        const tempAudioPath = path.join(DOWNLOAD_DIR, `temp_${shortcode}.mp3`);
+        const tempAudioPath = path.join(downloadDir, `temp_${shortcode}.mp3`);
         let transcriptField: string;
         let errorSuffix = "";
 
@@ -150,7 +146,7 @@ export async function POST(request: NextRequest) {
         // Save transcription file
         const txtContent = buildTxtContent(meta, transcriptField);
         const fileName = `${prefix}${safeName}${errorSuffix}.txt`;
-        const txtPath = path.join(DOWNLOAD_DIR, fileName);
+        const txtPath = path.join(downloadDir, fileName);
         fs.writeFileSync(txtPath, txtContent, "utf-8");
         savedFiles.push(fileName);
         debugLogs.push(`[REEL ${i}] SAVED: ${fileName}`);
@@ -168,16 +164,12 @@ export async function POST(request: NextRequest) {
       errors,
       noTranscription,
       debugLogs,
-      downloadDir: DOWNLOAD_DIR,
+      downloadDir,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     const fallbackSaved: string[] = [];
     const fallbackLogs: string[] = [...debugLogs, `❌ [TRANSCRIBE] Service failed: ${msg}`];
-
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
-      fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
-    }
 
     // Save fallback files with error message
     for (let i = 0; i < videosMeta.length; i++) {
@@ -190,7 +182,7 @@ export async function POST(request: NextRequest) {
       const prefix = buildFilePrefix(meta.views, meta.publishDate);
       const txtContent = buildTxtContent(meta, `ERRO: Transcription service failed — ${msg}`);
       const fileName = `${prefix}${safeName}_erro_service.txt`;
-      const txtPath = path.join(DOWNLOAD_DIR, fileName);
+      const txtPath = path.join(downloadDir, fileName);
       fs.writeFileSync(txtPath, txtContent, "utf-8");
       fallbackSaved.push(fileName);
       fallbackLogs.push(`[FALLBACK] SAVED: ${fileName}`);
@@ -204,7 +196,7 @@ export async function POST(request: NextRequest) {
       errors: [msg],
       noTranscription: videoUrls,
       debugLogs: fallbackLogs,
-      downloadDir: DOWNLOAD_DIR,
+      downloadDir,
     });
   }
 }

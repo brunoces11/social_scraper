@@ -3,12 +3,11 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import path from "path";
 import fs from "fs";
+import { ensureDownloadDir, resolvePlatformFromPayload } from "@/lib/download-dirs";
 
 export const maxDuration = 600;
 
 const execAsync = promisify(exec);
-
-const DOWNLOAD_DIR = path.join(process.cwd(), "downloads");
 
 function sanitizeFilename(title: string): string {
   return title
@@ -50,15 +49,13 @@ function generateRandomParams() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { videoUrls, titles, mode, viewsList, publishDates } = await req.json();
+    const { videoUrls, titles, mode, viewsList, publishDates, platform } = await req.json();
 
     if (!Array.isArray(videoUrls) || videoUrls.length === 0) {
       return NextResponse.json({ error: "No URL provided." }, { status: 400 });
     }
 
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
-      fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
-    }
+    const downloadDir = ensureDownloadDir(resolvePlatformFromPayload(platform, videoUrls));
 
     const results: { url: string; status: string; filename?: string; error?: string; variant?: string }[] = [];
 
@@ -72,13 +69,13 @@ export async function POST(req: NextRequest) {
         // Step 1: Download with yt-dlp to a temp file
         const idMatch = url.match(/\/video\/(\d+)/);
         const videoId = idMatch ? idMatch[1] : `video_${i}`;
-        const tempFile = path.join(DOWNLOAD_DIR, `${videoId}_temp.%(ext)s`);
+        const tempFile = path.join(downloadDir, `${videoId}_temp.%(ext)s`);
 
         const downloadCmd = `yt-dlp --no-playlist --windows-filenames -o "${tempFile}" "${url}"`;
         await execAsync(downloadCmd, { timeout: 120000 });
 
         // Find the temp downloaded file
-        const files = fs.readdirSync(DOWNLOAD_DIR);
+        const files = fs.readdirSync(downloadDir);
         const tempFound = files.find((f) => f.startsWith(`${videoId}_temp`));
 
         if (!tempFound) {
@@ -86,7 +83,7 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        const tempPath = path.join(DOWNLOAD_DIR, tempFound);
+        const tempPath = path.join(downloadDir, tempFound);
         const safeName = sanitizeFilename(rawTitle) || videoId;
         const prefix = buildFilePrefix(views, publishDate);
 
@@ -94,14 +91,14 @@ export async function POST(req: NextRequest) {
           // --- x5 mode: original copy + 5 ffmpeg variants ---
 
           // Copy original (no ffmpeg processing)
-          const origPath = path.join(DOWNLOAD_DIR, `${prefix}${safeName}_ORIG.mp4`);
+          const origPath = path.join(downloadDir, `${prefix}${safeName}_ORIG.mp4`);
           fs.copyFileSync(tempPath, origPath);
           results.push({ url, status: "ok", filename: `${prefix}${safeName}_ORIG.mp4`, variant: "ORIG" });
 
           // Generate 5 variants
           for (let v = 1; v <= 5; v++) {
             const variantLabel = `v${String(v).padStart(2, "0")}`;
-            const variantPath = path.join(DOWNLOAD_DIR, `${prefix}${safeName}_${variantLabel}.mp4`);
+            const variantPath = path.join(downloadDir, `${prefix}${safeName}_${variantLabel}.mp4`);
             try {
               const p = generateRandomParams();
               const ffmpegCmd = `ffmpeg -y -i "${tempPath}" -map_metadata -1 -vf "scale=iw*${p.scaleFactor}:ih*${p.scaleFactor},crop=iw/${p.scaleFactor}:ih/${p.scaleFactor},noise=alls=${p.noise}:allf=t,setpts=${(1 / p.speed).toFixed(6)}*PTS" -af "atempo=${p.speed.toFixed(4)},asetrate=44100*${p.pitch.toFixed(4)},aresample=44100" -c:v libx264 -preset veryfast -crf ${p.crf} -c:a aac -b:a 64k -movflags +faststart "${variantPath}"`;
@@ -120,7 +117,7 @@ export async function POST(req: NextRequest) {
           }
         } else {
           // --- Default mode: existing behavior unchanged ---
-          const finalPath = path.join(DOWNLOAD_DIR, `${prefix}${safeName}.mp4`);
+          const finalPath = path.join(downloadDir, `${prefix}${safeName}.mp4`);
 
           // Step 2: Convert to H.264 with ffmpeg
           // - strip metadata (-map_metadata -1)
@@ -148,8 +145,8 @@ export async function POST(req: NextRequest) {
     const failed = results.filter((r) => r.status === "failed").length;
 
     return NextResponse.json({
-      message: `Download completed: ${ok} succeeded, ${failed} failure(s). Folder: ${DOWNLOAD_DIR}`,
-      downloadDir: DOWNLOAD_DIR,
+      message: `Download completed: ${ok} succeeded, ${failed} failure(s). Folder: ${downloadDir}`,
+      downloadDir,
       results,
     });
   } catch {

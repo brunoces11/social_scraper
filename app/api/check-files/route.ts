@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
-
-const DOWNLOAD_DIR = path.join(process.cwd(), "downloads");
+import { getDownloadDir, resolvePlatformFromPayload } from "@/lib/download-dirs";
 
 function sanitizeFilename(title: string): string {
   return title
@@ -34,20 +33,30 @@ function buildFilePrefix(views: number, publishDate: string): string {
 
 const MIN_MP3_SIZE = 1024;  // 1KB
 const MIN_MP4_SIZE = 1024;  // 1KB
+type CheckVideo = { title: string; videoUrl: string; views?: number; publishDate?: string };
 
 export async function POST(request: NextRequest) {
   try {
-    const { videos } = await request.json() as {
+    const { videos, videoUrls, platform } = await request.json() as {
+      platform?: string;
+      videoUrls?: string[];
       videos: { title: string; videoUrl: string; views?: number; publishDate?: string }[];
     };
+    const inputVideos: CheckVideo[] = Array.isArray(videos)
+      ? videos
+      : Array.isArray(videoUrls)
+        ? videoUrls.map((videoUrl) => ({ title: "", videoUrl }))
+        : [];
 
-    if (!Array.isArray(videos) || videos.length === 0) {
+    if (inputVideos.length === 0) {
       return NextResponse.json({ error: "No videos provided." }, { status: 400 });
     }
 
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
+    const downloadDir = getDownloadDir(resolvePlatformFromPayload(platform, inputVideos.map((v) => v.videoUrl)));
+
+    if (!fs.existsSync(downloadDir)) {
       return NextResponse.json({
-        results: videos.map((v) => ({
+        results: inputVideos.map((v) => ({
           videoUrl: v.videoUrl,
           hasTxt: false,
           hasMp3: false,
@@ -56,7 +65,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const results = videos.map((v) => {
+    const results = inputVideos.map((v) => {
       const safeName = sanitizeFilename(v.title);
       if (!safeName) {
         return { videoUrl: v.videoUrl, hasTxt: false, hasMp3: false, hasMp4: false };
@@ -65,9 +74,9 @@ export async function POST(request: NextRequest) {
       const prefix = buildFilePrefix(v.views || 0, v.publishDate || "");
       const baseName = `${prefix}${safeName}`;
 
-      const txtPath = path.join(DOWNLOAD_DIR, `${baseName}.txt`);
-      const mp3Path = path.join(DOWNLOAD_DIR, `${baseName}.mp3`);
-      const mp4Path = path.join(DOWNLOAD_DIR, `${baseName}.mp4`);
+      const txtPath = path.join(downloadDir, `${baseName}.txt`);
+      const mp3Path = path.join(downloadDir, `${baseName}.mp3`);
+      const mp4Path = path.join(downloadDir, `${baseName}.mp4`);
 
       let hasTxt = false;
       let hasMp3 = false;

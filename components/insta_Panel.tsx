@@ -159,6 +159,7 @@ export default function InstaPanel() {
         body: JSON.stringify({
           videoUrls: selectedVideoUrls,
           videosMeta,
+          platform: "instagram",
         }),
       });
       const data = await res.json();
@@ -202,6 +203,7 @@ export default function InstaPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           videos,
+          platform: "instagram",
           videosMeta: videosMeta.map((m) => ({
             ...m,
             hashtags: m.hashtags.join(", "),
@@ -237,6 +239,7 @@ export default function InstaPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           videoUrls: selectedVideoUrls,
+          platform: "instagram",
           accountId: selectedElevenLabsAccountIdRef.current,
           voiceId: selectedVoiceId,
         }),
@@ -270,6 +273,7 @@ export default function InstaPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           videoUrls: selectedVideoUrls,
+          platform: "instagram",
         }),
       });
       const data = await res.json();
@@ -300,7 +304,7 @@ export default function InstaPanel() {
       const checkRes = await fetch("/api/check-files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoUrls: selectedVideoUrls }),
+        body: JSON.stringify({ videoUrls: selectedVideoUrls, platform: "instagram" }),
       });
       const checkData = await checkRes.json();
       const urlsToProcess = checkData.urlsToProcess || selectedVideoUrls;
@@ -311,7 +315,7 @@ export default function InstaPanel() {
       const transcribeRes = await fetch("/api/insta_transcribe-videos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoUrls: urlsToProcess, videosMeta }),
+        body: JSON.stringify({ videoUrls: urlsToProcess, videosMeta, platform: "instagram" }),
       });
       const transcribeData = await transcribeRes.json();
       setDetailLogs((prev) => [...prev, `✅ Transcribed ${transcribeData.savedFiles?.length || 0} files`]);
@@ -328,7 +332,7 @@ export default function InstaPanel() {
       const enrichRes = await fetch("/api/insta_enrich-metadata", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videos, videosMeta }),
+        body: JSON.stringify({ videos, videosMeta, platform: "instagram" }),
       });
       const enrichData = await enrichRes.json();
       setDetailLogs((prev) => [...prev, `✅ Enriched ${enrichData.savedFiles?.length || 0} files`]);
@@ -340,6 +344,7 @@ export default function InstaPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           videoUrls: urlsToProcess,
+          platform: "instagram",
           accountId: selectedElevenLabsAccountIdRef.current,
           voiceId: selectedVoiceId,
         }),
@@ -352,7 +357,7 @@ export default function InstaPanel() {
       const dlRes = await fetch("/api/download-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoUrls: urlsToProcess }),
+        body: JSON.stringify({ videoUrls: urlsToProcess, platform: "instagram" }),
       });
       const dlData = await dlRes.json();
       setDetailLogs((prev) => [...prev, `✅ Downloaded ${dlData.savedFiles?.length || 0} videos`]);

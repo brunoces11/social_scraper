@@ -3,10 +3,9 @@ import { runActorAndGetResults } from "@/lib/apify";
 import { buildFilePrefix, buildTxtContent, sanitizeFilename, type VideoMeta } from "@/lib/transcription-files";
 import path from "path";
 import fs from "fs";
+import { ensureDownloadDir } from "@/lib/download-dirs";
 
 export const maxDuration = 300;
-
-const DOWNLOAD_DIR = path.join(process.cwd(), "downloads");
 
 interface ActorConfig {
   id: string;
@@ -88,6 +87,7 @@ export async function POST(request: NextRequest) {
   // Parse body outside try so it's accessible in catch for fallback file generation
   const body = await request.json();
   const { videoUrls, videosMeta = [], actorId: requestedActorId, accountId } = body;
+  const downloadDir = ensureDownloadDir("tiktok");
   const debugLogs: string[] = [];
 
   try {
@@ -142,10 +142,6 @@ export async function POST(request: NextRequest) {
       if (match && videosMeta[i]) {
         idToMeta.set(match[1], videosMeta[i]);
       }
-    }
-
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
-      fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
     }
 
     const savedFiles: string[] = [];
@@ -210,7 +206,7 @@ export async function POST(request: NextRequest) {
 
         const txtContent = buildTxtContent(meta, transcriptField);
         const fileName = `${prefix}${safeName}${errorSuffix}.txt`;
-        const txtPath = path.join(DOWNLOAD_DIR, fileName);
+        const txtPath = path.join(downloadDir, fileName);
         fs.writeFileSync(txtPath, txtContent, "utf-8");
         savedFiles.push(fileName);
         debugLogs.push(`[ITEM ${ri}] SAVED: ${fileName} (${txtContent.length} chars)`);
@@ -222,16 +218,12 @@ export async function POST(request: NextRequest) {
     }
 
     debugLogs.push(`[RESULT] savedFiles=${savedFiles.length}, noTranscript=${noTranscript.length}, errors=${errors.length}`);
-    return NextResponse.json({ rawItems, savedFiles, errors, noTranscript, debugLogs, downloadDir: DOWNLOAD_DIR });
+    return NextResponse.json({ rawItems, savedFiles, errors, noTranscript, debugLogs, downloadDir });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     // On any error, save .txt files with metadata + error in transcription field
     const fallbackSaved: string[] = [];
     const fallbackLogs: string[] = [...debugLogs, `❌ [TRANSCRIPT] Apify service failed: ${msg}`];
-
-    if (!fs.existsSync(DOWNLOAD_DIR)) {
-      fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
-    }
 
     for (let i = 0; i < videosMeta.length; i++) {
       const meta = videosMeta[i] as VideoMeta | undefined;
@@ -242,7 +234,7 @@ export async function POST(request: NextRequest) {
       const errorSuffix = getErrorSuffix(msg);
       const txtContent = buildTxtContent(meta, `ERRO: Apify actor failed — ${msg}`);
       const fileName = `${prefix}${safeName}${errorSuffix}.txt`;
-      const txtPath = path.join(DOWNLOAD_DIR, fileName);
+      const txtPath = path.join(downloadDir, fileName);
       fs.writeFileSync(txtPath, txtContent, "utf-8");
       fallbackSaved.push(fileName);
       fallbackLogs.push(`[FALLBACK] SAVED: ${fileName} (metadata only, transcript error)`);
@@ -257,7 +249,7 @@ export async function POST(request: NextRequest) {
       errors: [msg],
       noTranscript: videoUrls,
       debugLogs: fallbackLogs,
-      downloadDir: DOWNLOAD_DIR,
+      downloadDir,
     });
   }
 }
