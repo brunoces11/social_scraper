@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const transcriptRows = normalizeYouTubeTranscripts(rawItems, videosMeta);
+    const transcriptRows = normalizeYouTubeTranscripts(rawItems, videosMeta as never[]);
 
     debugLogs.push(`[RESULT] savedFiles=${savedFiles.length}, noTranscription=${noTranscription.length}, errors=${errors.length}`);
     return NextResponse.json({

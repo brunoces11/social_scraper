@@ -63,6 +63,21 @@ function extractHashtags(item: UnknownRecord): string[] {
   return matches.map((tag) => tag.replace(/^#/, ""));
 }
 
+function ensureHashtagArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => safeString(item).replace(/^#/, "")).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim().replace(/^#/, ""))
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 function getTranscriptText(item: UnknownRecord): string {
   const raw = firstValue(item, [
     "subtitles",
@@ -135,7 +150,7 @@ export function normalizeYouTubeTranscripts(rawItems: any[], channelRows: Channe
       description: safeString(firstValue(item, ["description", "text", "snippet.description"])) || channelData?.description || "",
       views: safeNumber(firstValue(item, ["viewCount", "views", "statistics.viewCount"])) || channelData?.views || 0,
       likes: safeNumber(firstValue(item, ["likes", "likeCount", "statistics.likeCount"])) || channelData?.likes || 0,
-      hashtags: channelData?.hashtags || extractHashtags(item),
+      hashtags: ensureHashtagArray(channelData?.hashtags).length > 0 ? ensureHashtagArray(channelData?.hashtags) : extractHashtags(item),
       videoUrl: videoUrl || channelData?.videoUrl || "",
       transcript,
       transcriptStatus: transcript ? "ok" as const : "failed" as const,

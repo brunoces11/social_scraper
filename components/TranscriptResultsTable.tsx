@@ -39,6 +39,9 @@ export default function TranscriptResultsTable({ rows }: TranscriptResultsTableP
     }
   };
 
+  const formatHashtags = (hashtags: TranscriptRow["hashtags"] | string) =>
+    Array.isArray(hashtags) ? hashtags.join(", ") : String(hashtags || "");
+
   const sortIndicator = (key: SortKey) =>
     sortKey === key ? (sortDir === "asc" ? " ▲" : " ▼") : "";
 
@@ -113,7 +116,7 @@ export default function TranscriptResultsTable({ rows }: TranscriptResultsTableP
                 <td className="col-title" title={row.title}>{row.title}</td>
                 <td className="col-number">{row.views.toLocaleString("en-US")}</td>
                 <td className="col-number">{row.likes.toLocaleString("en-US")}</td>
-                <td className="col-hashtags">{row.hashtags.join(", ")}</td>
+                <td className="col-hashtags">{formatHashtags(row.hashtags)}</td>
                 <td className="col-desc" title={row.description}>
                   {row.description.substring(0, 100)}{row.description.length > 100 ? "..." : ""}
                 </td>
