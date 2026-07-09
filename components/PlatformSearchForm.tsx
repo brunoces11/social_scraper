@@ -68,7 +68,7 @@ export default function PlatformSearchForm({ platform, onSubmit, isLoading }: Pl
   const [url, setUrl] = useState("");
   const [keyword, setKeyword] = useState("");
   const [hashtag, setHashtag] = useState("");
-  const [maxVideos, setMaxVideos] = useState(50);
+  const [maxVideos, setMaxVideos] = useState("50");
   const [monthsBack, setMonthsBack] = useState("");
   const [countryCode, setCountryCode] = useState("BR");
 
@@ -78,11 +78,13 @@ export default function PlatformSearchForm({ platform, onSubmit, isLoading }: Pl
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasAnyInput || !isUrlValid) return;
+
+    const parsedMaxVideos = Number(maxVideos);
     onSubmit({
       [config.urlField]: url.trim(),
       keyword: keyword.trim(),
       hashtag: hashtag.trim(),
-      maxVideos,
+      maxVideos: Number.isFinite(parsedMaxVideos) && parsedMaxVideos > 0 ? parsedMaxVideos : 50,
       countryCode,
       ...(platform === "youtube" && Number(monthsBack) > 0 ? { monthsBack: Number(monthsBack) } : {}),
     });
@@ -152,8 +154,10 @@ export default function PlatformSearchForm({ platform, onSubmit, isLoading }: Pl
             type="number"
             min={1}
             max={1000}
+            inputMode="numeric"
+            step={1}
             value={maxVideos}
-            onChange={(e) => setMaxVideos(Number(e.target.value) || 50)}
+            onChange={(e) => setMaxVideos(e.target.value)}
             disabled={isLoading}
           />
         </div>
